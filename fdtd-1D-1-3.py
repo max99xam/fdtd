@@ -1,5 +1,6 @@
 """
-Script for test.
+fdtd-1D-1-3.py
+Simulation of a pulse hitting a dielectric medium
 """
 import numpy as np
 from math import exp

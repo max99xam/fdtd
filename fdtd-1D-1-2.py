@@ -21,6 +21,9 @@ source_position = int(width / 2)
 t0 = 40
 spread = 12
 
+# Coefficient corresponds Courant Condition.
+coeff = 0.5
+
 boundary_low = [0, 0]
 boundary_high = [0, 0]
 
@@ -56,13 +59,14 @@ def init():
 
 
 def update(iteration_step):
+
     # Calculate the Ex field.
     for k in range(1, width):
-        ex[k] = ex[k] + 0.5 * (hy[k - 1] - hy[k])
+        ex[k] = ex[k] + coeff * (hy[k - 1] - hy[k])
 
     # Electromagnetic "hard" source.
     # Put a Gaussian pulse in the middle.
-    pulse = exp(-0.5 * ((t0 - iteration_step) / spread) ** 2)
+    pulse = exp(-coeff * ((t0 - iteration_step) / spread) ** 2)
 
     source_dist = 20
 
@@ -76,10 +80,9 @@ def update(iteration_step):
     ex[width - 1] = boundary_high.pop(0)
     boundary_high.append(ex[width - 2])
 
-
     # Calculate the Hy field.
     for k in range(width - 1):
-        hy[k] = hy[k] + 0.5 * (ex[k] - ex[k + 1])
+        hy[k] = hy[k] + coeff * (ex[k] - ex[k + 1])
 
     # Update plot data.
     line1.set_data(x, ex)
