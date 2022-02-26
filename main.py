@@ -1,16 +1,27 @@
-# This is a sample Python script.
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+plt.style.use('seaborn-pastel')
+
+fig = plt.figure()
+ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+line, = ax.plot([], [], lw=3)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def init():
+    line.set_data([], [])
+    return line,
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def update(i):
+    x = np.linspace(0, 4, 1000)
+    y = np.sin(2 * np.pi * (x - 0.01 * i))
+    line.set_data(x, y)
+    return line,
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+anim = FuncAnimation(fig, update, init_func=init,
+                     frames=200, interval=20, blit=True)
+
+plt.show()
