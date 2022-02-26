@@ -1,5 +1,7 @@
 """
-Script for test.
+fd3d_1_2.py: 1D FDTD
+Simulation in free space
+Absorbing Boundary Condition added
 """
 import numpy as np
 from math import exp
