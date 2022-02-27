@@ -2,7 +2,7 @@
 Script for test.
 """
 import numpy as np
-from math import exp
+from math import pi, sin
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 
@@ -10,8 +10,12 @@ from matplotlib.animation import FuncAnimation
 width = 150
 
 # Data.
+# E-field x-component.
 ex = np.zeros(width)
+
+# H-field y-component.
 hy = np.zeros(width)
+
 x = np.arange(0, width)
 
 # Pulse parameters
@@ -23,20 +27,38 @@ boundary_low = [0, 0]
 boundary_high = [0, 0]
 
 # Coefficient corresponds Courant Condition.
-coeff = 0.5
+# The Courant-Friedrichs-Lewy factor.
+cfl_factor = 0.5
+
+# Cell size
+ddx = 0.01
+
+# Time step size
+dt = ddx / 6e8
+
+# Frequency in MHz
+freq_in = 700e6
 
 # Create Dielectric Profile
 epsilon1 = 1
 epsilon2 = 4
+epsz = 8.854e-12
+sigma = 0.04
+
+
+ca = np.empty(width)
+ca.fill(epsilon1)
 
 cb = np.empty(width)
-cb.fill(epsilon1)
-cb = coeff * cb
+cb.fill(epsilon1 * cfl_factor)
+
 cb_start = 100
 
-cb[cb_start:] = coeff / epsilon2
+eaf = dt * sigma / (2 * epsz * epsilon2)
+ca[cb_start:] = (1 - eaf ) / (1 + eaf)
+cb[cb_start:] = cfl_factor / (epsilon2 * (1 + eaf))
 
-max_iterations = 500
+max_iterations = 10000
 
 # Plot configuration.
 fig, (ax1, ax2) = plt.subplots(2)
@@ -60,8 +82,8 @@ ax2.set_ylabel('H$_y$', fontsize=font_size)
 line1, = ax1.plot([], [], lw=2)
 line2, = ax2.plot([], [], lw=2)
 
-line1_profile, = ax1.plot((coeff / cb - 1) / 3, 'k--', linewidth=0.5)
-line2_profile, = ax2.plot((coeff / cb - 1) / 3, 'k--', linewidth=0.5)
+line1_profile, = ax1.plot((cfl_factor / cb - 1) / 3, 'k--', linewidth=0.5)
+line2_profile, = ax2.plot((cfl_factor / cb - 1) / 3, 'k--', linewidth=0.5)
 
 
 def init():
@@ -74,17 +96,23 @@ def update(iteration_step):
 
     # Calculate the Ex field.
     for k in range(1, width):
-        ex[k] = ex[k] + cb[k] * (hy[k - 1] - hy[k])
+        ex[k] = ca[k] * ex[k] + cb[k] * (hy[k - 1] - hy[k])
+
+
 
     # Electromagnetic "hard" source.
     # Put a Gaussian pulse in the middle.
-    pulse = exp(-coeff * ((t0 - iteration_step) / spread) ** 2)
+    # pulse = exp(-cfl_factor * ((t0 - iteration_step) / spread) ** 2)
 
-    source_dist = 20
+    # Put a Sinusoidal "soft"? source.
+    pulse = sin(2*pi*freq_in*dt*iteration_step)
 
     # Two sources.
-    ex[source_position - source_dist] = pulse
+    # ex[source_position - source_dist] += pulse
+    ex[int(width * 0.1)] = pulse + ex[int(width * 0.1)]
     # ex[source_position + source_dist] = pulse
+
+
 
     # Absorbing Boundary Conditions
     ex[0] = boundary_low.pop(0)
@@ -95,7 +123,7 @@ def update(iteration_step):
 
     # Calculate the Hy field.
     for k in range(width - 1):
-        hy[k] = hy[k] + coeff * (ex[k] - ex[k + 1])
+        hy[k] = hy[k] + cfl_factor * (ex[k] - ex[k + 1])
 
     # Update plot data.
     line1.set_data(x, ex)
