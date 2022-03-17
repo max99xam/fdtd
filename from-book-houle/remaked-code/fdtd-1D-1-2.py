@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 # Work area width.
-width = 150
+width = 100
 
 # Data.
 ex = np.zeros(width)
@@ -18,8 +18,8 @@ x = np.arange(0, width)
 
 # Pulse parameters
 source_position = int(width / 2)
-t0 = 40
-spread = 12
+t0 = 70
+spread = 10
 
 # Coefficient corresponds Courant Condition.
 coeff = 0.5
@@ -27,7 +27,7 @@ coeff = 0.5
 boundary_low = [0, 0]
 boundary_high = [0, 0]
 
-max_iterations = 250
+max_iterations = 120
 
 # Plot configuration.
 fig, (ax1, ax2) = plt.subplots(2)
@@ -71,8 +71,9 @@ def update(iteration_step):
     source_dist = 20
 
     # Two sources.
-    ex[source_position - source_dist] = pulse
-    ex[source_position + source_dist] = pulse
+    # ex[source_position - source_dist] = pulse
+    # ex[source_position + source_dist] = pulse
+    ex[source_position] = pulse
 
     # Absorbing Boundary Conditions
     ex[0] = boundary_low.pop(0)

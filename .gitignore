@@ -9,6 +9,7 @@ __pycache__/
 *.so
 
 main.py
+*.txt
 
 # Distribution / packaging
 .Python
