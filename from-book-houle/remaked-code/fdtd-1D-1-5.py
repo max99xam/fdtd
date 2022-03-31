@@ -3,12 +3,12 @@ fdtd-1D-1-5.py
 Simulation of a sinusoid wave hitting a lossy dielectric
 """
 import numpy as np
-from math import pi, sin
+from math import pi, sin, exp
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 # Work area width.
-width = 150
+width = 200
 
 # Data.
 # E-field x-component.
@@ -20,8 +20,8 @@ hy = np.zeros(width)
 x = np.arange(0, width)
 
 # Pulse parameters
-source_position = int(width / 2)
-t0 = 40
+source_position = int(width * 0.1)
+t0 = 50
 spread = 12
 
 boundary_low = [0, 0]
@@ -31,20 +31,28 @@ boundary_high = [0, 0]
 # The Courant-Friedrichs-Lewy factor.
 cfl_factor = 0.5
 
-# Cell size
-ddx = 0.01
-
-# Time step size
-dt = ddx / 6e8
+c0 = 3e8
 
 # Frequency in MHz
 freq_in = 700e6
+
+lambda0 = c0 / freq_in
+print(lambda0/10)
+
+# Cell size
+ddx = 0.01
+ddx = lambda0 / 25
+# Time step size
+dt = ddx / (2*c0)
+
+
 
 # Create Dielectric Profile
 epsilon1 = 1
 epsilon2 = 4
 epsz = 8.854e-12
 sigma = 0.04
+# sigma = 0
 
 
 ca = np.empty(width)
@@ -53,11 +61,18 @@ ca.fill(epsilon1)
 cb = np.empty(width)
 cb.fill(epsilon1 * cfl_factor)
 
-cb_start = 100
+cb_start = (int)(width*0.35)
+cb_end = (int)(width*0.4)
 
 eaf = dt * sigma / (2 * epsz * epsilon2)
+# ca[cb_start:cb_end] = (1 - eaf ) / (1 + eaf)
+# cb[cb_start:cb_end] = cfl_factor / (epsilon2 * (1 + eaf))
+
 ca[cb_start:] = (1 - eaf ) / (1 + eaf)
 cb[cb_start:] = cfl_factor / (epsilon2 * (1 + eaf))
+
+# ca[cb_start+30:cb_end+30] = (1 - eaf ) / (1 + eaf)
+# cb[cb_start+30:cb_end+30] = cfl_factor / (epsilon2 * (1 + eaf))
 
 max_iterations = 10000
 
@@ -103,14 +118,15 @@ def update(iteration_step):
 
     # Electromagnetic "hard" source.
     # Put a Gaussian pulse in the middle.
+    pulse = exp(-cfl_factor * ((t0 - iteration_step) / spread) ** 2)* np.sin(freq_in * iteration_step * dt)
     # pulse = exp(-cfl_factor * ((t0 - iteration_step) / spread) ** 2)
 
     # Put a Sinusoidal "soft"? source.
-    pulse = sin(2*pi*freq_in*dt*iteration_step)
+    # pulse = sin(2*pi*freq_in*dt*iteration_step)
 
     # Two sources.
-    # ex[source_position - source_dist] += pulse
-    ex[int(width * 0.1)] = pulse + ex[int(width * 0.1)]
+    ex[source_position] += pulse
+    # ex[int(width * 0.1)] = pulse + ex[int(width * 0.1)]
     # ex[source_position + source_dist] = pulse
 
 
