@@ -23,18 +23,18 @@ c = 299.792458;
 
 % S = 1 courant factor OLD
 % courant factor
-cfl_factor=0.98; 
+cfl_factor=0.98;
 
 dz = c * dt /  cfl_factor;
 
 % Permeability of free space in (V fs^2/e nm).
-mu0=2.013354451e-4; 
+mu0=2.013354451e-4;
 
 % Permittivity of free space in (e / V nm).
-eps0=55.26349597e-3; 
+eps0=55.26349597e-3;
 
-% Planck's constant
-h = 0.6582119514; 
+% Planck's constant.
+h = 0.6582119514;
 
 % Frequency of light in eV (electron-volts).
 omega_ev = 1.5d0;
@@ -43,69 +43,73 @@ omega_ev = 1.5d0;
 omega = omega_ev / h;
 
 % Width of electric field.
-delta = 10.0d0; 
+delta = 10.0d0;
 
 % Electric field is an Gaussian envelop.
-source = exp(-(t .^ 2) / (delta^2)) .* cos(omega .* t); 
+source = exp(-(t .^ 2) / (delta^2)) .* cos(omega .* t);
 
 
 
 % Position index of source.
-source_position = 50; 
+source_position = 50;
 
 % 1D grid size.
 grid_size = 500;
 
 % Space axis
-Z = (0:grid_size-1).*dz; 
+Z = (0:grid_size-1).*dz;
 
 % Permitivity array.
 eps(1:350) = eps0;
 
 % Permitivity array.
-eps(350:grid_size) = eps0*1.5; 
+eps(350:grid_size) = eps0 * 1.5;
 
 % Permeability array.
-mu(1:grid_size) = mu0; 
+mu(1:grid_size) = mu0;
 
 % Conductivity array.
 sigma(1:grid_size) = 0;
 
 % Width of PML layer.
-pml_width = 55; 
+pml_width = 55;
 
 % Polynomial order for grading sigma array (pp 292, Taflove).
 m = 3;
 
-neta = sqrt(mu0/eps0);
+% Impedance.
+eta = sqrt(mu0/eps0);
 
-% required reflectivity
-R=1e-8; 
+% Required reflection factor.
+R = 1e-8;
 
-sigma_max =- (m+1) * log(R) / (2 * neta * pml_width * dz);
+% Taflove, pp 292, Eq 7.61.
+sigma_max =- (m+1) * log(R) / (2 * eta * pml_width * dz);
 
-Pright=((1:pml_width + 1) ./ pml_width) .^ m * sigma_max;
+% Taflove, pp 292, Eq 7.60a.
+Pright = ((1:pml_width + 1) ./ pml_width) .^ m * sigma_max;
 
-% Lossy conductivity profile.
-sigma(grid_size - pml_width:grid_size) = Pright; 
+% Lossy electric conductivity profile.
+sigma(grid_size - pml_width:grid_size) = Pright;
 sigma(1:pml_width + 1) = fliplr(Pright);
 
 % Eq 7.8 Taflove, pp 275
-sigma_star(1:grid_size) = sigma .* mu0 ./ eps0; 
+% Magnetic conductivity loss.
+sigma_star(1:grid_size) = sigma .* mu0 ./ eps0;
 
 % PML constants.
-A=((mu - 0.5 * dt * sigma_star) ./ (mu + 0.5 * dt * sigma_star)); 
-B=(dt / dz) ./ (mu + 0.5 * dt * sigma_star);                          
-C=((eps - 0.5 * dt * sigma)./(eps + 0.5 * dt * sigma)); 
-D=(dt / dz) ./ (eps + 0.5 * dt * sigma);                     
+A=((mu - 0.5 * dt * sigma_star) ./ (mu + 0.5 * dt * sigma_star));
+B=(dt / dz) ./ (mu + 0.5 * dt * sigma_star);
+C=((eps - 0.5 * dt * sigma)./(eps + 0.5 * dt * sigma));
+D=(dt / dz) ./ (eps + 0.5 * dt * sigma);
 
 % Electromagnetic field projections in space array.
-Hy(1:grid_size) = 0.0; 
+Hy(1:grid_size) = 0.0;
 Ex(1:grid_size) = 0.0;
 
 % Plot configuration.
 fh = figure(1);
-set(fh, 'Color', 'white'); 
+set(fh, 'Color', 'white');
 
 % Time loop.
 for time_step = 1:length(t)
@@ -120,8 +124,8 @@ for time_step = 1:length(t)
         figure(1)
         plot(Z,Ex)
         xlabel('Z in nm','fontSize',14);
-        ylabel('E_x','fontSize',14);  
-        title('1D FDTD with PML','fontSize',14);              
+        ylabel('E_x','fontSize',14);
+        title('1D FDTD with PML','fontSize',14);
         axis([0 grid_size*dz -1 1]);
         getframe();
 end
