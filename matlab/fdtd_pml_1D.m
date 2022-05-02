@@ -16,22 +16,23 @@ dt = 0.13;
 t_max = 1000; 
 
 % Time array.
-t = -20:dt:t_max; 
+t = 0:dt:t_max; 
+t0 = 20;
 
 % Speed of light in nm/fs.
-c = 299.792458; 
+light_spd = 299.792458; 
 
 % S = 1 courant factor OLD
-% courant factor
-cfl_factor=0.98;
+% Courant factor.
+cfl_factor = 0.98;
 
-dz = c * dt /  cfl_factor;
+dz = light_spd * dt /  cfl_factor;
 
 % Permeability of free space in (V fs^2/e nm).
-mu0=2.013354451e-4;
+mu0 = 2.013354451e-4;
 
 % Permittivity of free space in (e / V nm).
-eps0=55.26349597e-3;
+eps0 = 55.26349597e-3;
 
 % Planck's constant.
 h = 0.6582119514;
@@ -42,22 +43,20 @@ omega_ev = 1.5d0;
 % Frequency of light in (1/fs).
 omega = omega_ev / h;
 
-% Width of electric field.
-delta = 10.0d0;
+% Width of electric beam.
+tau = 10.0d0;
 
 % Electric field is an Gaussian envelop.
-source = exp(-(t .^ 2) / (delta^2)) .* cos(omega .* t);
-
-
+source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
 
 % Position index of source.
-source_position = 50;
+src_position = 150;
 
 % 1D grid size.
 grid_size = 500;
 
 % Space axis
-Z = (0:grid_size-1).*dz;
+Z = (0:grid_size - 1) .* dz;
 
 % Permitivity array.
 eps(1:350) = eps0;
@@ -78,7 +77,7 @@ pml_width = 55;
 m = 3;
 
 % Impedance.
-eta = sqrt(mu0/eps0);
+eta = sqrt(mu0 / eps0);
 
 % Required reflection factor.
 R = 1e-8;
@@ -98,14 +97,14 @@ sigma(1:pml_width + 1) = fliplr(Pright);
 sigma_star(1:grid_size) = sigma .* mu0 ./ eps0;
 
 % PML constants.
-A=((mu - 0.5 * dt * sigma_star) ./ (mu + 0.5 * dt * sigma_star));
-B=(dt / dz) ./ (mu + 0.5 * dt * sigma_star);
-C=((eps - 0.5 * dt * sigma)./(eps + 0.5 * dt * sigma));
-D=(dt / dz) ./ (eps + 0.5 * dt * sigma);
+A = ((mu - 0.5 * dt * sigma_star) ./ (mu + 0.5 * dt * sigma_star));
+B = (dt / dz) ./ (mu + 0.5 * dt * sigma_star);
+C = ((eps - 0.5 * dt * sigma)./(eps + 0.5 * dt * sigma));
+D = (dt / dz) ./ (eps + 0.5 * dt * sigma);
 
 % Electromagnetic field projections in space array.
-Hy(1:grid_size) = 0.0;
-Ex(1:grid_size) = 0.0;
+hy(1:grid_size) = 0.0;
+ex(1:grid_size) = 0.0;
 
 % Plot configuration.
 fh = figure(1);
@@ -114,18 +113,18 @@ set(fh, 'Color', 'white');
 % Time loop.
 for time_step = 1:length(t)
         % Insert source in certain space grid.
-        Ex(source_position) = Ex(source_position) + source(time_step);
+        ex(src_position) = ex(src_position) + source(time_step);
 
-        Hy(1:grid_size-1) = A(1:grid_size - 1) .* Hy(1:grid_size - 1) - B(1:grid_size - 1) .* (Ex(2:grid_size) - Ex(1:grid_size - 1));
-        Ex(2:grid_size-1) = C(2:grid_size-1) .* Ex(2:grid_size - 1) - D(2:grid_size - 1) .* (Hy(2:grid_size - 1) - Hy(1:grid_size - 2));
-        Ex(grid_size) = Ex(grid_size-1);
+        hy(1:grid_size - 1) = A(1:grid_size - 1) .* hy(1:grid_size - 1) - B(1:grid_size - 1) .* (ex(2:grid_size) - ex(1:grid_size - 1));
+        ex(2:grid_size - 1) = C(2:grid_size - 1) .* ex(2:grid_size - 1) - D(2:grid_size - 1) .* (hy(2:grid_size - 1) - hy(1:grid_size - 2));
+        ex(grid_size) = ex(grid_size - 1);
 
         % Draw plot.
         figure(1)
-        plot(Z,Ex)
-        xlabel('Z in nm','fontSize',14);
-        ylabel('E_x','fontSize',14);
-        title('1D FDTD with PML','fontSize',14);
+        plot(Z, ex)
+        xlabel('Z in nm','fontSize', 14);
+        ylabel('E_x','fontSize', 14);
+        title('1D FDTD with PML','fontSize', 14);
         axis([0 grid_size*dz -1 1]);
         getframe();
 end

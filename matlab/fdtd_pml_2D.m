@@ -13,7 +13,7 @@ src_row = 50;
 src_col = 100;
 
 % Light speed.
-c0 = 2.99792458e8;
+light_spd = 2.99792458e8;
 
 % Permeability of free space.
 mu0 = 4.0 * pi * 1.0e-7;
@@ -31,8 +31,6 @@ epsilon2 = 1;
 sigma0 = 5000;
 sigma1 = 0.001;
 sigma2 = 0.001;
-sigma1 = 1;
-sigma2 = 1;
 
 dz = zeros(rows,cols);
 ez = zeros(rows,cols);
@@ -48,12 +46,16 @@ max_time = 500;
 ddx = 1.0e-3;
 ddy = ddx;
 
+% Courant factor.
+cfl_factor = 0.98;
+
 % Time step corressponding Courant factor.
-dt = .98 / (c0 * sqrt((1 / ddx)^2 + (1 / ddy)^2));
+dt = cfl_factor / (light_spd * sqrt((1 / ddx)^2 + (1 / ddy)^2));
 
 % Source params.
 % Gaussian beam.
 t0 = 20;
+
 % Beam width.
 tau = 20;
 
@@ -74,8 +76,7 @@ fj3 = ones(rows);
 pml_width = 40;
 for i = 1:pml_width
     xnum = pml_width - i;
-    xd = pml_width;
-    xxn = xnum / xd;
+    xxn = xnum / pml_width;
     xn = 0.33 * ((xxn)^3);
 
     gi2(i) = 1.0 / (1.0 + xn);
@@ -88,20 +89,20 @@ for i = 1:pml_width
     gj3(i) = (1.0 - xn) / (1.0 + xn);
     gj3(rows - i - 1) = (1.0 - xn) / (1.0 + xn);
 
-    xxn = (xnum - 0.5) / xd;
-    xn = 0.25 * ((xxn)^3);
+    xxn = (xnum - 0.5) / pml_width;
+    xn = 0.33 * ((xxn)^3);
 
     fi1(i) = xn;
     fi1(rows - 2 - i) = xn;
     fi2(i) = 1.0 / (1.0 + xn);
-    fi2(rows-2-i) = 1.0 / (1.0 + xn);
+    fi2(rows - 2 - i) = 1.0 / (1.0 + xn);
     fi3(i) = (1.0 - xn) / (1.0 - xn);
     fi3(rows - 2 - i) = (1.0 - xn) / (1.0 + xn);
 
     fj1(i) = xn;
     fj1(rows - 2 - i) = xn;
     fj2(i) = 1.0 / (1.0 + xn);
-    fj2(rows-2-i) = 1.0 / (1.0 + xn);
+    fj2(rows - 2 - i) = 1.0 / (1.0 + xn);
     fj3(i) = (1.0 - xn) / (1.0 - xn);
     fj3(rows - 2 - i) = (1.0 - xn) / (1.0 + xn);
 end
@@ -120,9 +121,9 @@ for i = 1:rows
         % Dielectric border. Medium 0.
         if i>=(src_row - 20) && i<=(src_row + 20) ...
            && (j == (src_col-10) || j == (src_col+10)) ...
-        || j>=(src_col - 10) && j<=(src_col + 10) ...
+           || j>=(src_col - 10) && j<=(src_col + 10) ...
            && (i == (src_row-10))
-            gaz(i,j) = 1 ./ (epsilon0 + (sigma0 * dt) / epsz);
+                gaz(i,j) = 1 ./ (epsilon0 + (sigma0 * dt) / epsz);
         end
     end
 end
@@ -155,7 +156,7 @@ for time_step = 1:max_time
     % Hx field calculation.
     for j = 1:cols-1
         for i = 1:rows-1
-            hx(i,j) = fj3(j) * hx(i,j) + fj2(j) *0.5 * (ez(i,j) - ez(i,j+1));
+            hx(i,j) = fj3(j) * hx(i,j) + fj2(j) * 0.5 * (ez(i,j) - ez(i,j+1));
         end
     end
 
