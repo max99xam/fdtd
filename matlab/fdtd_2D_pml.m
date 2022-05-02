@@ -9,8 +9,8 @@ rows = 200;
 cols = 200;
 
 % Set source position
-source_position_row = 150;
-source_position_col = 82;
+src_row = 50;
+src_col = 100;
 
 % Light speed.
 c0 = 2.99792458e8;
@@ -18,17 +18,21 @@ c0 = 2.99792458e8;
 % Permeability of free space.
 mu0 = 4.0 * pi * 1.0e-7;
 
+% Permittivity of free space.
+epsz = 8.8e-12;
+
 % Permittivity.
 epsilon0 = 1;
 epsilon1 = 1;
 epsilon2 = 1;
-epsz = 8.8e-12;
 
 
 % Conductivity.
-sigma0 = 5.7e8;
+sigma0 = 5000;
 sigma1 = 0.001;
 sigma2 = 0.001;
+sigma1 = 1;
+sigma2 = 1;
 
 dz = zeros(rows,cols);
 ez = zeros(rows,cols);
@@ -38,7 +42,7 @@ hy = zeros(rows,cols);
 gaz = ones(rows,cols);
 
 % Max simulation time.
-max_time = 1000;
+max_time = 500;
 
 % Space grid step.
 ddx = 1.0e-3;
@@ -67,7 +71,7 @@ fj2 = ones(rows);
 fj3 = ones(rows);
 
 % Calculate PML.
-pml_width = 50;
+pml_width = 40;
 for i = 1:pml_width
     xnum = pml_width - i;
     xd = pml_width;
@@ -102,24 +106,27 @@ for i = 1:pml_width
     fj3(rows - 2 - i) = (1.0 - xn) / (1.0 + xn);
 end
 
-for i=100:180
-    for j=60:120
-        gaz(i,j)=1./(epsilon1+(sigma1*dt)/epsz);
+for i = 1:rows
+    for j = 1:cols
 
-        % Make dielectric border.
-        if i>=120 && i<=160 && j>=74 && j<=75 ...
-        || i>=120 && i<=160 && j>=90 && j<=91 ...
-        || i>=160 && i<=161 && j>=75 && j<=130
-            gaz(i,j)=1./(epsilon0+(sigma0*dt)/epsz);
+        % Medium 1.
+        gaz(i,j) = 1 ./ (epsilon1 + (sigma1 * dt) / epsz);
+
+        % Medium 2.
+        %if i>=70 && i<=80 && j>=80 && j<=120
+        %    gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
+        %end
+
+        % Dielectric border. Medium 0.
+        if i>=(src_row - 20) && i<=(src_row + 20) ...
+           && (j == (src_col-10) || j == (src_col+10)) ...
+        || j>=(src_col - 10) && j<=(src_col + 10) ...
+           && (i == (src_row-10))
+            gaz(i,j) = 1 ./ (epsilon0 + (sigma0 * dt) / epsz);
         end
     end
 end
 
-for i=70:80
-    for j=80:120
-        gaz(i,j)=1./(epsilon2+(sigma2*dt)/epsz);
-    end
-end
 
 % Main fdtd loop.
 % Time layers calculation.
@@ -143,10 +150,10 @@ for time_step = 1:max_time
 
     % Put Gaussian beam source.
     source = -2.0 * ((time_step - t0) ./ tau) .* exp(-1.0 * ((time_step - t0) ./ tau) .^ 2.0);
-    ez(source_position_row, source_position_col) = source;
+    ez(src_row, src_col) = source;
 
     % Hx field calculation.
-    for j=1:cols-1
+    for j = 1:cols-1
         for i = 1:rows-1
             hx(i,j) = fj3(j) * hx(i,j) + fj2(j) *0.5 * (ez(i,j) - ez(i,j+1));
         end
@@ -159,12 +166,16 @@ for time_step = 1:max_time
         end
     end
 
-    timestep=int2str(time_step);
-    imagesc(ez);
+    % Draw plot.
+    timestep = int2str(time_step);
+
+    ez_lims = [-0.1 0.1];
+    imagesc(ez, ez_lims);
+
     colormap(jet);
     colorbar
-    title(['Ez at time step = ',timestep]);
+    title(['Ez at time step = ', timestep]);
 
-    pause(0.008);
+    pause(0.001);
 end
 
