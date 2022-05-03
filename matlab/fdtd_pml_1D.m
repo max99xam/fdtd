@@ -44,13 +44,13 @@ omega_ev = 1.5d0;
 omega = omega_ev / h;
 
 % Width of electric beam.
-tau = 10.0d0;
+tau = 8.0d0;
 
 % Electric field is an Gaussian envelop.
 source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
 
 % Position index of source.
-src_position = 150;
+src_position = 56;
 
 % 1D grid size.
 grid_size = 500;
@@ -73,7 +73,7 @@ sigma(1:grid_size) = 0;
 % Width of PML layer.
 pml_width = 55;
 
-% Polynomial order for grading sigma array (pp 292, Taflove).
+% Optimal polynomial order for grading sigma array (pp 292, Taflove).
 m = 3;
 
 % Impedance.
@@ -86,11 +86,13 @@ R = 1e-8;
 sigma_max =- (m+1) * log(R) / (2 * eta * pml_width * dz);
 
 % Taflove, pp 292, Eq 7.60a.
-Pright = ((1:pml_width + 1) ./ pml_width) .^ m * sigma_max;
+sigma_in_pml = (((1:pml_width + 1) ./ pml_width) .^ m) * sigma_max;
 
 % Lossy electric conductivity profile.
-sigma(grid_size - pml_width:grid_size) = Pright;
-sigma(1:pml_width + 1) = fliplr(Pright);
+sigma(grid_size - pml_width:grid_size) = sigma_in_pml;
+
+% fliplr - flip array left to right.
+sigma(1:pml_width + 1) = fliplr(sigma_in_pml);
 
 % Eq 7.8 Taflove, pp 275
 % Magnetic conductivity loss.
@@ -124,7 +126,9 @@ for time_step = 1:length(t)
         plot(Z, ex)
         xlabel('Z in nm','fontSize', 14);
         ylabel('E_x','fontSize', 14);
-        title('1D FDTD with PML','fontSize', 14);
+
+        time_step_str = int2str(time_step);
+        title(['1D FDTD with PML. Time step = ', time_step_str],'fontSize', 14);
         axis([0 grid_size*dz -1 1]);
         getframe();
 end

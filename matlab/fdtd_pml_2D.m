@@ -168,14 +168,14 @@ for time_step = 1:max_time
     end
 
     % Draw plot.
-    timestep = int2str(time_step);
+    time_step_str = int2str(time_step);
 
     ez_lims = [-0.1 0.1];
     imagesc(ez, ez_lims);
 
     colormap(jet);
     colorbar
-    title(['Ez at time step = ', timestep]);
+    title(['Ez at time step = ', time_step_str]);
 
     pause(0.001);
 end
