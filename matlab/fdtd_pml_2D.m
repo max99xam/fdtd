@@ -5,12 +5,13 @@
 % Chapter 3.
 
 % Grid sizes.
-rows = 200;
-cols = 200;
+pml_width = 40;
+rows = 200 + pml_width * 2;
+cols = 200 + pml_width * 2;
 
 % Set source position
-src_row = 50;
-src_col = 100;
+src_row = rows / 2;
+src_col = cols / 2;
 
 % Light speed.
 light_spd = 2.99792458e8;
@@ -24,7 +25,7 @@ epsz = 8.8e-12;
 % Permittivity.
 epsilon0 = 1;
 epsilon1 = 1;
-epsilon2 = 1;
+epsilon2 = 3.2;
 
 
 % Conductivity.
@@ -40,7 +41,7 @@ hy = zeros(rows,cols);
 gaz = ones(rows,cols);
 
 % Max simulation time.
-max_time = 500;
+max_time = 400;
 
 % Space grid step.
 ddx = 1.0e-3;
@@ -73,7 +74,6 @@ fj2 = ones(rows);
 fj3 = ones(rows);
 
 % Calculate PML.
-pml_width = 40;
 for i = 1:pml_width
     xnum = pml_width - i;
     xxn = xnum / pml_width;
@@ -114,17 +114,17 @@ for i = 1:rows
         gaz(i,j) = 1 ./ (epsilon1 + (sigma1 * dt) / epsz);
 
         % Medium 2.
-        %if i>=70 && i<=80 && j>=80 && j<=120
-        %    gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
-        %end
+        if i>=90 && i<=130 && j>=90 && j<=130
+            gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
+        end
 
         % Dielectric border. Medium 0.
-        if i>=(src_row - 20) && i<=(src_row + 20) ...
-           && (j == (src_col-10) || j == (src_col+10)) ...
-           || j>=(src_col - 10) && j<=(src_col + 10) ...
-           && (i == (src_row-10))
-                gaz(i,j) = 1 ./ (epsilon0 + (sigma0 * dt) / epsz);
-        end
+        %if i>=(src_row - 20) && i<=(src_row + 20) ...
+        %   && (j == (src_col-10) || j == (src_col+10)) ...
+        %   || j>=(src_col - 10) && j<=(src_col + 10) ...
+        %   && (i == (src_row-10))
+        %        gaz(i,j) = 1 ./ (epsilon0 + (sigma0 * dt) / epsz);
+        %end
     end
 end
 
@@ -167,10 +167,20 @@ for time_step = 1:max_time
         end
     end
 
+    max_ez = max(ez);
+    min_ez = min(ez);
+
+    disp("~~~~~~~~~~")
+    disp(max_ez)
+    disp(min_ez)
+    disp("----------")
+
     % Draw plot.
     time_step_str = int2str(time_step);
-
-    ez_lims = [-0.1 0.1];
+    
+    min_val = -0.05;
+    max_val = 0.05;
+    ez_lims = [min_val max_val];
     imagesc(ez, ez_lims);
 
     colormap(jet);
