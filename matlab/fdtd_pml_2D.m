@@ -5,7 +5,7 @@
 % Chapter 3.
 
 % Grid sizes.
-pml_width = 40;
+pml_width = 100;
 rows = 200 + pml_width * 2;
 cols = 200 + pml_width * 2;
 
@@ -48,7 +48,7 @@ ddx = 1.0e-3;
 ddy = ddx;
 
 % Courant factor.
-cfl_factor = 0.98;
+cfl_factor = 0.99;
 
 % Time step corressponding Courant factor.
 dt = cfl_factor / (light_spd * sqrt((1 / ddx)^2 + (1 / ddy)^2));
@@ -114,9 +114,12 @@ for i = 1:rows
         gaz(i,j) = 1 ./ (epsilon1 + (sigma1 * dt) / epsz);
 
         % Medium 2.
-        if i>=90 && i<=130 && j>=90 && j<=130
-            gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
-        end
+        %if i>j
+        %    gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
+        %end
+        %if i>=90 && i<=130 && j>=90 && j<=130
+        %    gaz(i,j) = 1 ./ (epsilon2 + (sigma2 * dt) / epsz);
+        %end
 
         % Dielectric border. Medium 0.
         %if i>=(src_row - 20) && i<=(src_row + 20) ...
@@ -150,19 +153,16 @@ for time_step = 1:max_time
     end
 
     % Put Gaussian beam source.
-    source = -2.0 * ((time_step - t0) ./ tau) .* exp(-1.0 * ((time_step - t0) ./ tau) .^ 2.0);
+    source = -2.0 * ((time_step - t0) / tau) * exp(-1.0 * ((time_step - t0) / tau) ^ 2.0);
     ez(src_row, src_col) = source;
 
-    % Hx field calculation.
+    
     for j = 1:cols-1
         for i = 1:rows-1
+            % Hx field calculation.
             hx(i,j) = fj3(j) * hx(i,j) + fj2(j) * 0.5 * (ez(i,j) - ez(i,j+1));
-        end
-    end
 
-    % Hy field calculation.
-    for j = 1:cols-1
-        for i = 1:rows-1
+            % Hy field calculation.
             hy(i,j) = fi3(i) * hy(i,j) + fi2(i) * 0.5 * (ez(i+1,j) - ez(i,j));
         end
     end

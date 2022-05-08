@@ -1,4 +1,3 @@
-
 % 1D FDTD method.
 % With PML Boundary conditions.
 % All units in eV,fs, nm.
@@ -15,8 +14,6 @@ dt = 0.13;
 % Maximum time limit.
 t_max = 1000; 
 
-% Time array.
-%t = 0:dt:t_max; 
 t0 = 20;
 
 % Speed of light in nm/fs.
@@ -24,7 +21,7 @@ light_spd = 299.792458;
 
 % S = 1 courant factor OLD
 % Courant factor.
-cfl_factor = 0.98;
+cfl_factor = 0.985;
 
 dz = light_spd * dt /  cfl_factor;
 
@@ -46,10 +43,8 @@ omega = omega_ev / h;
 % Width of electric beam.
 tau = 8.0d0;
 
-
-
 % Position index of source.
-src_position = 55;
+src_position = 75;
 
 % 1D grid size.
 grid_size = 500;
@@ -58,10 +53,10 @@ grid_size = 500;
 Z = (0:grid_size - 1) .* dz;
 
 % Permitivity array.
-eps(1:350) = eps0;
+eps(1:349) = eps0;
 
 % Permitivity array.
-eps(350:grid_size) = eps0 * 1.5;
+eps(350:grid_size) = eps0 * 2.5;
 
 % Permeability array.
 mu(1:grid_size) = mu0;
@@ -85,13 +80,14 @@ R = 1e-8;
 sigma_max = -(m+1) * log(R) / (2 * eta * pml_width * dz);
 
 % Taflove, pp 292, Eq 7.60a.
-sigma_in_pml = (((1:pml_width + 1) ./ pml_width) .^ m) * sigma_max;
+for i = 0:pml_width
+    sigma_in_pml = (((i+1) / pml_width) .^ m) * sigma_max;
 
-% Lossy electric conductivity profile.
-sigma(grid_size - pml_width:grid_size) = sigma_in_pml;
+    % Lossy electric conductivity profile.
+    sigma(grid_size-pml_width+i) = sigma_in_pml;
+    sigma(pml_width-i+1) = sigma_in_pml;
+end
 
-% fliplr - flip array left to right.
-sigma(1:pml_width + 1) = fliplr(sigma_in_pml);
 
 % Eq 7.8 Taflove, pp 275
 % Magnetic conductivity loss.
@@ -118,10 +114,19 @@ for time_step = 1:t_max
         t = time_step * dt;
         source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
         ex(src_position) = ex(src_position) + source;
+        
 
-        hy(1:grid_size - 1) = A(1:grid_size - 1) .* hy(1:grid_size - 1) - B(1:grid_size - 1) .* (ex(2:grid_size) - ex(1:grid_size - 1));
-        ex(2:grid_size - 1) = C(2:grid_size - 1) .* ex(2:grid_size - 1) - D(2:grid_size - 1) .* (hy(2:grid_size - 1) - hy(1:grid_size - 2));
-        ex(grid_size) = ex(grid_size - 1);
+        % Hy field calculation.
+        for i = 1:grid_size - 1
+            hy(i) = A(i) * hy(i) - B(i) * (ex(i+1) - ex(i));
+        end
+
+        % Ex field calculation.
+        for i = 2:grid_size - 1
+            ex(i) = C(i) * ex(i) - D(i) * (hy(i) - hy(i-1));
+        end
+
+        %ex(grid_size) = ex(grid_size - 1);
 
 
         % Draw plot.
