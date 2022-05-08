@@ -16,7 +16,7 @@ dt = 0.13;
 t_max = 1000; 
 
 % Time array.
-t = 0:dt:t_max; 
+%t = 0:dt:t_max; 
 t0 = 20;
 
 % Speed of light in nm/fs.
@@ -46,11 +46,10 @@ omega = omega_ev / h;
 % Width of electric beam.
 tau = 8.0d0;
 
-% Electric field is an Gaussian envelop.
-source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
+
 
 % Position index of source.
-src_position = 56;
+src_position = 55;
 
 % 1D grid size.
 grid_size = 500;
@@ -73,7 +72,7 @@ sigma(1:grid_size) = 0;
 % Width of PML layer.
 pml_width = 55;
 
-% Optimal polynomial order for grading sigma array (pp 292, Taflove).
+% Optimal polynomial order for grading sigma array (pp 293, Taflove).
 m = 3;
 
 % Impedance.
@@ -82,8 +81,8 @@ eta = sqrt(mu0 / eps0);
 % Required reflection factor.
 R = 1e-8;
 
-% Taflove, pp 292, Eq 7.61.
-sigma_max =- (m+1) * log(R) / (2 * eta * pml_width * dz);
+% Taflove, pp 293, Eq 7.62.
+sigma_max = -(m+1) * log(R) / (2 * eta * pml_width * dz);
 
 % Taflove, pp 292, Eq 7.60a.
 sigma_in_pml = (((1:pml_width + 1) ./ pml_width) .^ m) * sigma_max;
@@ -113,13 +112,17 @@ fh = figure(1);
 set(fh, 'Color', 'white');
 
 % Time loop.
-for time_step = 1:length(t)
+for time_step = 1:t_max
         % Insert source in certain space grid.
-        ex(src_position) = ex(src_position) + source(time_step);
+        % Electric field is an Gaussian envelop.
+        t = time_step * dt;
+        source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
+        ex(src_position) = ex(src_position) + source;
 
         hy(1:grid_size - 1) = A(1:grid_size - 1) .* hy(1:grid_size - 1) - B(1:grid_size - 1) .* (ex(2:grid_size) - ex(1:grid_size - 1));
         ex(2:grid_size - 1) = C(2:grid_size - 1) .* ex(2:grid_size - 1) - D(2:grid_size - 1) .* (hy(2:grid_size - 1) - hy(1:grid_size - 2));
         ex(grid_size) = ex(grid_size - 1);
+
 
         % Draw plot.
         figure(1)
