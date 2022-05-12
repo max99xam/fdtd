@@ -8,22 +8,24 @@ close all
 clear all
 %--------------------------------------------------------------------%
 
-% Time step in femto seconds.
-dt = 0.13; 
-
-% Maximum time limit.
-t_max = 1000; 
-
-t0 = 20;
 
 % Speed of light in nm/fs.
 light_spd = 299.792458; 
 
 % S = 1 courant factor OLD
 % Courant factor.
-cfl_factor = 0.985;
+cfl_factor = 0.99;
 
-dz = light_spd * dt /  cfl_factor;
+%dz = light_spd * dt /  cfl_factor;
+dx = 40;
+
+% Time step in femto seconds.
+dt = dx * cfl_factor / light_spd; 
+
+% Maximum time limit.
+t_max = 300; 
+t0 = 20;
+
 
 % Permeability of free space in (V fs^2/e nm).
 mu0 = 2.013354451e-4;
@@ -35,13 +37,13 @@ eps0 = 55.26349597e-3;
 h = 0.6582119514;
 
 % Frequency of light in eV (electron-volts).
-omega_ev = 1.5d0;
+omega_ev = 1.5;
 
 % Frequency of light in (1/fs).
 omega = omega_ev / h;
 
 % Width of electric beam.
-tau = 8.0d0;
+tau = 6.0;
 
 % Position index of source.
 src_position = 75;
@@ -50,7 +52,7 @@ src_position = 75;
 grid_size = 500;
 
 % Space axis
-Z = (0:grid_size - 1) .* dz;
+Z = (0:grid_size - 1) .* dx;
 
 % Permitivity array.
 eps(1:349) = eps0;
@@ -77,11 +79,11 @@ eta = sqrt(mu0 / eps0);
 R = 1e-8;
 
 % Taflove, pp 293, Eq 7.62.
-sigma_max = -(m+1) * log(R) / (2 * eta * pml_width * dz);
+sigma_max = -(m+1) * log(R) / (2 * eta * pml_width * dx);
 
 % Taflove, pp 292, Eq 7.60a.
-for i = 0:pml_width
-    sigma_in_pml = (((i+1) / pml_width) .^ m) * sigma_max;
+for i = 1:pml_width
+    sigma_in_pml = ((i / pml_width) .^ m) * sigma_max;
 
     % Lossy electric conductivity profile.
     sigma(grid_size-pml_width+i) = sigma_in_pml;
@@ -95,9 +97,9 @@ sigma_star(1:grid_size) = sigma .* mu0 ./ eps0;
 
 % PML constants.
 A = ((mu - 0.5 * dt * sigma_star) ./ (mu + 0.5 * dt * sigma_star));
-B = (dt / dz) ./ (mu + 0.5 * dt * sigma_star);
+B = (dt / dx) ./ (mu + 0.5 * dt * sigma_star);
 C = ((eps - 0.5 * dt * sigma)./(eps + 0.5 * dt * sigma));
-D = (dt / dz) ./ (eps + 0.5 * dt * sigma);
+D = (dt / dx) ./ (eps + 0.5 * dt * sigma);
 
 % Electromagnetic field projections in space array.
 hy(1:grid_size) = 0.0;
@@ -137,6 +139,6 @@ for time_step = 1:t_max
 
         time_step_str = int2str(time_step);
         title(['1D FDTD with PML. Time step = ', time_step_str],'fontSize', 14);
-        axis([0 grid_size*dz -1 1]);
+        axis([0 grid_size*dx -1 1]);
         getframe();
 end
