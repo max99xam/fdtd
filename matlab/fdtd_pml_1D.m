@@ -10,7 +10,7 @@ clear all
 
 
 % Speed of light in nm/fs.
-light_spd = 299.792458; 
+light_spd = 299.792458;
 
 % S = 1 courant factor OLD
 % Courant factor.
@@ -20,11 +20,11 @@ cfl_factor = 0.99;
 dx = 40;
 
 % Time step in femto seconds.
-dt = dx * cfl_factor / light_spd; 
+dt = dx * cfl_factor / light_spd;
 
 % Maximum time limit.
-t_max = 300; 
-t0 = 20;
+t_max = 300;
+t_delay = 10;
 
 
 % Permeability of free space in (V fs^2/e nm).
@@ -37,13 +37,13 @@ eps0 = 55.26349597e-3;
 h = 0.6582119514;
 
 % Frequency of light in eV (electron-volts).
-omega_ev = 1.5;
+omega_ev = 3.5;
 
 % Frequency of light in (1/fs).
 omega = omega_ev / h;
 
 % Width of electric beam.
-tau = 6.0;
+tau = 4.0;
 
 % Position index of source.
 src_position = 75;
@@ -52,7 +52,7 @@ src_position = 75;
 grid_size = 500;
 
 % Space axis
-Z = (0:grid_size - 1) .* dx;
+X = (0:grid_size - 1) .* dx;
 
 % Permitivity array.
 eps(1:349) = eps0;
@@ -70,7 +70,7 @@ sigma(1:grid_size) = 0;
 pml_width = 55;
 
 % Optimal polynomial order for grading sigma array (pp 293, Taflove).
-m = 3;
+grading_order = 3;
 
 % Impedance.
 eta = sqrt(mu0 / eps0);
@@ -79,11 +79,11 @@ eta = sqrt(mu0 / eps0);
 R = 1e-8;
 
 % Taflove, pp 293, Eq 7.62.
-sigma_max = -(m+1) * log(R) / (2 * eta * pml_width * dx);
+sigma_max = -(grading_order+1) * log(R) / (2 * eta * pml_width * dx);
 
 % Taflove, pp 292, Eq 7.60a.
 for i = 1:pml_width
-    sigma_in_pml = ((i / pml_width) .^ m) * sigma_max;
+    sigma_in_pml = ((i / pml_width) .^ grading_order) * sigma_max;
 
     % Lossy electric conductivity profile.
     sigma(grid_size-pml_width+i) = sigma_in_pml;
@@ -114,16 +114,18 @@ for time_step = 1:t_max
         % Insert source in certain space grid.
         % Electric field is an Gaussian envelop.
         t = time_step * dt;
-        source = exp(-(((t0 - t) / tau) .^ 2)) .* cos(omega .* t);
+        source = exp(-(((t_delay - t) / tau) ^ 2)) * cos(omega * t);
         ex(src_position) = ex(src_position) + source;
-        
+
 
         % Hy field calculation.
         for i = 1:grid_size - 1
             hy(i) = A(i) * hy(i) - B(i) * (ex(i+1) - ex(i));
         end
 
+
         % Ex field calculation.
+        % i= 1 = pec, so don't evaluate.
         for i = 2:grid_size - 1
             ex(i) = C(i) * ex(i) - D(i) * (hy(i) - hy(i-1));
         end
@@ -133,7 +135,7 @@ for time_step = 1:t_max
 
         % Draw plot.
         figure(1)
-        plot(Z, ex)
+        plot(X, ex)
         xlabel('Z in nm','fontSize', 14);
         ylabel('E_x','fontSize', 14);
 
