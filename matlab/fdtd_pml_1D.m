@@ -1,6 +1,9 @@
 % 1D FDTD method.
 % With PML Boundary conditions.
-% All units in eV,fs, nm.
+% All units in eV, fs, nm.
+
+% Based on: http://dougneubauer.com/wp-content/uploads/wdata/yee2dpml1/yee2d_c.txt
+% An adaptation of 2-D FDTD TE code of Dr. Susan Hagness.
 
 %--------------------------------------------------------------------%
 clc
@@ -41,6 +44,9 @@ omega_ev = 3.5;
 
 % Frequency of light in (1/fs).
 omega = omega_ev / h;
+
+lambda = light_spd / (omega * dx);
+
 
 % Width of electric beam.
 tau = 4.0;

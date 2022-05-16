@@ -1,7 +1,7 @@
 '''
 1D FDTD method.
 With PML Boundary conditions.
-All units in eV,fs, nm.
+All units in eV, fs, nm.
 '''
 import numpy as np
 from math import pi, sin, exp
