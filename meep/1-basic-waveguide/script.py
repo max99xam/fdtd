@@ -2,7 +2,6 @@ import meep as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-# distance units: μm
 cell = mp.Vector3(16, 8, 0)
 
 geometry = [
@@ -22,7 +21,6 @@ sources = [
 pml_thickness = 1.0
 pml_layers = [mp.PML(pml_thickness)]
 
-# number of pixels per distance unit
 resolution = 10
 
 sim = mp.Simulation(
