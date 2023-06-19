@@ -5,7 +5,7 @@
              wave propagates along z direction.
              This code is an implementation of examples in Sullivan's FDTD textbook.
 """
-
+sd
 import numpy as np
 import scipy.constants as const
 import matplotlib.pyplot as plt
